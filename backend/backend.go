@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"regexp"
 	"sync"
 	"time"
 )
@@ -20,6 +21,10 @@ func NewStorage(url string) *Storage {
 		for {
 			posts, err := getPosts(url)
 			if err == nil {
+				r := regexp.MustCompile("<.*?>")
+				for idx, _ := range posts {
+					posts[idx].TextBegin = r.ReplaceAllString(posts[idx].Html[:1000], "")
+				}
 				s.mtx.Lock()
 				s.posts = posts
 				s.mtx.Unlock()
@@ -63,10 +68,14 @@ func getPosts(url string) ([]Post, error) {
 }
 
 type Post struct {
-	Title        string `json:"title"`
-	Url          string `json:"url"`
-	Excerpt      string `json:"excerpt"`
-	FeatureImage string `json:"feature_image"`
+	Title               string `json:"title"`
+	Url                 string `json:"url"`
+	Html                string `json:"html"`
+	Excerpt             string `json:"excerpt"`
+	TextBegin           string `json:"text_begin"`
+	FeatureImage        string `json:"feature_image"`
+	FeatureImageAlt     string `json:"feature_image_alt"`
+	FeatureImageCaption string `json:"feature_image_caption"`
 }
 
 type Result struct {
